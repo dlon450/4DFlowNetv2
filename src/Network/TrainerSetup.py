@@ -46,7 +46,7 @@ class TrainerSetup:
         net = SR4DFlowNet(res_increase)
         self.predictions = net.build_network(u, v, w, u_mag, v_mag, w_mag, low_resblock, hi_resblock)
         self.model = tf.keras.Model(input_layer, self.predictions)
-
+        self.model.summary()
         # ===== Loss function =====
         print(f"Divergence loss2 * {self.div_weight}")
 
@@ -102,6 +102,9 @@ class TrainerSetup:
         """
             Calculate Speed magnitude error
         """
+        print(u_pred, u)
+        print(v_pred, v)
+        print(w_pred, w)
         return (u_pred - u) ** 2 +  (v_pred - v) ** 2 + (w_pred - w) ** 2
 
     def init_model_dir(self):

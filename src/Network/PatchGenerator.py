@@ -152,5 +152,3 @@ class PatchGenerator():
             end_results = end_results[:, :, :-self.padding[2]]
 
         return end_results     
-    
-    

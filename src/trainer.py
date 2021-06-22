@@ -13,7 +13,7 @@ def load_indexes(index_file):
     return indexes
 
 if __name__ == "__main__":
-    data_dir = '../data'
+    data_dir = 'data/test_270421'
     
     # ---- Patch index files ----
     training_file = '{}/train.csv'.format(data_dir)
@@ -33,8 +33,8 @@ if __name__ == "__main__":
     patch_size = 16
     res_increase = 2
     # Residual blocks, default (8 LR ResBlocks and 4 HR ResBlocks)
-    low_resblock = 8
-    hi_resblock = 4
+    low_resblock = 2
+    hi_resblock = 2
 
     # Load data file and indexes
     trainset = load_indexes(training_file)

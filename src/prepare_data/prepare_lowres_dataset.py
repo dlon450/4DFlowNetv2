@@ -6,31 +6,33 @@ import fft_downsampling as fft
 import scipy.ndimage as ndimage
 from h5functions import save_to_h5
 
-def choose_venc():
+def choose_venc_type():
     '''
         Give a 68% that data will have a same venc on all 3 velocity components.
     '''
     my_list = ['same'] * 68 + ['diff'] * 32
     return random.choice(my_list)
 
-if __name__ == '__main__':
-    # Config
-    base_path = '../../data'
-    # Put your path to Hires Dataset
-    input_filepath  = f'{base_path}/example_data_HR.h5'
-    output_filename = f'{base_path}/example_data_LR.h5'
-    # Downsample rate
-    downsample = 2
+def choose_venc(venc_values, max_vel, pr=0.1):
+    '''
+        Probability pr (default 0.1) that venc will be lower than max velocity.
+    '''
+    randindx = np.random.randint(2)
+    if random.random() <= pr:
+        return venc_values[np.where(venc_values > max_vel - 1.)][randindx] 
+    return venc_values[np.where(venc_values > max_vel)][randindx] 
+
+def downsample_HR(input_filepath, output_filename, downsample=2):
 
     # --- Ready to do downsampling ---
     # setting the seeds for both random and np random, if we need to get the same random order on dataset everytime
-    # np.random.seed(10)
+    np.random.seed(10)
     crop_ratio = 1 / downsample
     base_venc_multiplier = 1.1 # Default venc is set to 10% above vmax
 
     # Possible magnitude and venc values
     mag_values  =  np.asarray([60, 80, 120, 180, 240]) # in px values [0-4095]
-    venc_values =  np.asarray([0.3, 0.6, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5]) # in m/s
+    venc_values =  np.asarray([0.3, 0.6, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]) # in m/s
 
     # Load the mask once
     with h5py.File(input_filepath, mode = 'r' ) as hf:
@@ -46,24 +48,26 @@ if __name__ == '__main__':
         ## This is a part of augmentation to make sure we have varying magnitude
         mag_multiplier = mag_values[idx % len(mag_values)]
         mag_image = mask * mag_multiplier
-        
+
         # Load the velocity U V W from H5
         with h5py.File(input_filepath, mode = 'r' ) as hf:
-            mask = np.asarray(hf['mask'][0])
+            # mask = np.asarray(hf['mask'][0])
 
             hr_u = np.asarray(hf['u'][idx])
             hr_v = np.asarray(hf['v'][idx])
             hr_w = np.asarray(hf['w'][idx])
-            
+            # print(hr_u.shape)
+
             # Calculate the possible VENC for each direction (* 1.1 to avoid aliasing)
-            max_u = np.asarray(hf['u_max'][idx]) * base_venc_multiplier
-            max_v = np.asarray(hf['v_max'][idx]) * base_venc_multiplier
-            max_w = np.asarray(hf['w_max'][idx]) * base_venc_multiplier
+            max_u = np.max(hr_u) * base_venc_multiplier
+            max_v = np.max(hr_v) * base_venc_multiplier
+            max_w = np.max(hr_w) * base_venc_multiplier
+            print(max_u)
         
         # We assume most of the time, we use venc 1.50 m/s
         all_max = np.array([max_u, max_v, max_w])
-        
-        venc_choice = choose_venc()
+
+        venc_choice = choose_venc_type()
         if (venc_choice == 'same'):
             max_vel = np.max(all_max)
             if max_vel < 1.5:
@@ -72,23 +76,16 @@ if __name__ == '__main__':
                 venc_w = 1.5
             else:
                 # choose a venc up to 2 higher than current max vel
-                randindx = np.random.randint(2)
-                # print(randindx)
                 print('max_vel', max_vel)
-                venc = venc_values[np.where(venc_values > max_vel)][randindx]
+                venc = choose_venc(venc_values, max_vel)
                 venc_u = venc
                 venc_v = venc
                 venc_w = venc
         else:
             # Different venc
-            randindx = np.random.randint(2)
-            venc_u = venc_values[np.where(venc_values > max_u)][randindx]
-
-            randindx = np.random.randint(2)
-            venc_v = venc_values[np.where(venc_values > max_v)][randindx]
-
-            randindx = np.random.randint(2)
-            venc_w = venc_values[np.where(venc_values > max_w)][randindx]
+            venc_u = choose_venc(venc_values, max_u)
+            venc_v = choose_venc(venc_values, max_v)
+            venc_w = choose_venc(venc_values, max_w)
             
             # Skew the randomness by setting main velocity component to 1.5
             main_vel = np.argmax(all_max) # check which one is main vel component
@@ -131,5 +128,17 @@ if __name__ == '__main__':
 
             is_mask_saved = True
 
+if __name__ == '__main__':
+    # Config
+    base_path = 'data/test_270421'
+
+    # Downsample rate
+    downsample = 2
+
+    input_filepaths = [f'{base_path}/trainHR.h5', f'{base_path}/validationHR.h5', f'{base_path}/benchmarkHR.h5']
+    output_filenames = [f'{base_path}/trainLR.h5', f'{base_path}/validationLR.h5', f'{base_path}/benchmarkLR.h5']
+
+    for i, o in zip(input_filepaths, output_filenames):
+        downsample_HR(i, o, downsample)
 
     print("Done!")
