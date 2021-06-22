@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import h5py
+from scipy import ndimage
 
 class PatchHandler3D():
     # constructor
@@ -61,7 +62,7 @@ class PatchHandler3D():
         patch_size = self.patch_size
         hr_patch_size = self.patch_size * self.res_increase
         
-        # ============ get the patch ============ 
+        # ============ get the patch =============
         patch_index  = np.index_exp[idx, x_start:x_start+patch_size, y_start:y_start+patch_size, z_start:z_start+patch_size]
         hr_patch_index = np.index_exp[idx, x_start*self.res_increase :x_start*self.res_increase +hr_patch_size ,y_start*self.res_increase :y_start*self.res_increase +hr_patch_size , z_start*self.res_increase :z_start*self.res_increase +hr_patch_size ]
         mask_index = np.index_exp[0, x_start*self.res_increase :x_start*self.res_increase +hr_patch_size ,y_start*self.res_increase :y_start*self.res_increase +hr_patch_size , z_start*self.res_increase :z_start*self.res_increase +hr_patch_size ]
@@ -95,16 +96,19 @@ class PatchHandler3D():
         return img
 
     def apply_rotation(self, u, v, w, rotation_idx, plane_nr, is_phase_image):
-        if rotation_idx == 1:
-            # print("90 degrees, plane", plane_nr)
-            u,v,w = rotate90(u,v,w, plane_nr, rotation_idx, is_phase_image)
-        elif rotation_idx == 2:
-            # print("180 degrees, plane", plane_nr)
-            u,v,w = rotate180_3d(u,v,w, plane_nr, is_phase_image)
-        elif rotation_idx == 3:
-            # print("270 degrees, plane", plane_nr)
-            u,v,w = rotate90(u,v,w, plane_nr, rotation_idx, is_phase_image)
+        rotation_angle = np.pi*rotation_idx
+        
+        # if rotation_idx == 1:
+        #     # print("90 degrees, plane", plane_nr)
+        #     u,v,w = rotate90(u,v,w, plane_nr, rotation_idx, is_phase_image)
+        # elif rotation_idx == 2:
+        #     # print("180 degrees, plane", plane_nr)
+        #     u,v,w = rotate180_3d(u,v,w, plane_nr, is_phase_image)
+        # elif rotation_idx == 3:
+        #     # print("270 degrees, plane", plane_nr)
+        #     u,v,w = rotate90(u,v,w, plane_nr, rotation_idx, is_phase_image)
 
+        u, v, w = rotate(u, v, w, plane_nr, rotation_angle, is_phase_image)
         return u, v, w
 
     def load_vectorfield(self, hd5path, lr_hd5path, idx, mask_index, patch_index, hr_patch_index):
@@ -272,3 +276,38 @@ def rotate90(u, v, w, plane, k, is_phase_img=True):
     w = np.rot90(w, k=k, axes=ax)    
 
     return u,v,w
+
+def rotate(u, v, w, plane, theta, is_phase_img=True):
+    '''
+    Rotate by theta
+    '''
+
+    if plane == 1:
+        ax = (0, 1)
+        rmat = [[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]]
+    
+    elif plane == 2:
+        ax = (0, 2)
+        rmat = [[np.cos(theta), 0, np.sin(theta)], [0, 1, 0], [-np.sin(theta), 0, np.cos(theta)]]
+    
+    elif plane == 3:
+        ax = (1, 2)
+        rmat = [[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]]
+    
+    else:
+        return u, v, w
+    
+    degrees = theta*180/np.pi
+    if is_phase_img:
+        u_r = ndimage.rotate(np.matmul(rmat, u), angle=degrees, axes=ax)
+        w_r = ndimage.rotate(np.matmul(rmat, w), angle=degrees, axes=ax)
+        v_r = ndimage.rotate(np.matmul(rmat, v), angle=degrees, axes=ax)
+    else:
+        u_r = ndimage.rotate(u, angle=degrees, axes=ax)
+        w_r = ndimage.rotate(w, angle=degrees, axes=ax)
+        v_r = ndimage.rotate(v, angle=degrees, axes=ax)
+
+    return u_r, w_r, v_r
+
+def flip(x):
+    return x[::-1]
