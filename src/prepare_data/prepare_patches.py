@@ -40,13 +40,13 @@ if __name__ == "__main__":
     n_empty_patch_allowed = 0 # max number of empty patch per frame
     all_rotation = False # When true, include 90,180, and 270 rotation for each patch. When False, only include 1 random rotation.
     mask_threshold = 0.4 # Threshold for non-binary mask 
-    minimum_coverage = 0.2 # Minimum fluid region within a patch. Any patch with less than this coverage will not be taken. Range 0-1
+    minimum_coverage = 0.1 # Minimum fluid region within a patch. Any patch with less than this coverage will not be taken. Range 0-1
     args = [patch_size, n_patch, n_empty_patch_allowed, all_rotation, mask_threshold, minimum_coverage]
 
     base_path = 'data/test_270421'
     lr_files = ['trainLR.h5', 'validationLR.h5', 'benchmarkLR.h5']
     hr_files = ['trainHR.h5', 'validationHR.h5', 'benchmarkHR.h5']
-    output_filenames = [f'{base_path}/train.csv', f'{base_path}/validate.csv', f'{base_path}/benchmark.csv']
+    output_filenames = [f'{base_path}/train_r.csv', f'{base_path}/validate_r.csv', f'{base_path}/benchmark_r.csv']
 
     for lr_file, hr_file, output_filename in zip(lr_files, hr_files, output_filenames):
         generate_patches_csv(lr_file, hr_file, output_filename, *args)
