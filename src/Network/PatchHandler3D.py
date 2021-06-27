@@ -408,3 +408,22 @@ def flip(u, v, w, plane):
     w_f = np.matmul(flip_mat, w)
 
     return u_f, v_f, w_f
+
+def scale(u, v, w):
+    '''
+    Scale velocities
+    '''
+    sx = random.uniform(0.5, 1.5)
+    sy = random.uniform(0.5, 1.5)
+    sz = random.uniform(0.5, 1.5)
+
+    s = np.zeros((3,3))
+    s[0][0] = sx
+    s[1][1] = sy
+    s[2][2] = sz
+
+    u_s = np.matmul(s, u)
+    v_s = np.matmul(s, v)
+    w_s = np.matmul(s, w)
+
+    return u_s, v_s, w_s
