@@ -1,8 +1,9 @@
 import numpy as np
 import h5py
 
-def save_to_h5(output_filepath, col_name, dataset):
-    dataset = np.expand_dims(dataset, axis=0)
+def save_to_h5(output_filepath, col_name, dataset, expand=True):
+    if expand:
+        dataset = np.expand_dims(dataset, axis=0)
 
     # convert float64 to float32 to save space
     if dataset.dtype == 'float64':

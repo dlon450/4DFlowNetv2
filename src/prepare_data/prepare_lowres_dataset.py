@@ -130,7 +130,7 @@ def downsample_HR(input_filepath, output_filename, downsample=2):
 
 if __name__ == '__main__':
     # Config
-    base_path = 'data/test_270421'
+    base_path = 'data/test_280621'
 
     # Downsample rate
     downsample = 2

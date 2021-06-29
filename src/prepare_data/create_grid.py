@@ -20,7 +20,7 @@ class CFDResult():
             XYZ is converted to mm
         """
         names = ['xcoordinate','ycoordinate','zcoordinate','pressure','xvelocity','yvelocity','zvelocity']
-        arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=6)
+        arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=419907)
         
         x, y, z = arr['xcoordinate'], arr['ycoordinate'], arr['zcoordinate']
         
@@ -76,12 +76,11 @@ def convert_to_h5(file_list, output_name, dx):
         y_arr, min_y, max_y = get_minmax_arr(v_coords[:,1], dx)
         z_arr, min_z, max_z = get_minmax_arr(v_coords[:,2], dx)
 
-        # yy, zz = np.meshgrid(y_arr, z_arr)
         xx, yy, zz = np.mgrid[min_x:max_x: dx, min_y:max_y:dx, min_z:max_z:dx]
-        # ic(len(yy), len(zz))
+        ic(len(yy), len(zz))
         yy = np.asarray(yy)
         zz = np.asarray(zz)
-        # ic(xx.shape, yy.shape, zz.shape)
+        ic(xx.shape, yy.shape, zz.shape)
 
         # msv.multi_slice_viewer(interpolate_mask(v_coords, xx, yy, zz), slice_axis=1)
         # break
@@ -109,6 +108,7 @@ def convert_to_h5(file_list, output_name, dx):
         save_to_h5(output_name, f"w", vz1)
 
         if first:
+            print("Interpolating mask...")
             save_to_h5(output_name, f"maski", interpolate_mask(v_coords, xx, yy, zz))
             first = False
         
@@ -174,16 +174,17 @@ def create_mask(filename, threshold=0.0005, interval=None):
 
 if __name__ == "__main__":
 
-    data_dir = fr'CFD Output/TestOutput1'
-    dx = .1 # grid spacing
-    output_dir = fr'data/test_220621'
+    data_dir = fr'CFD Output/Model1'
+    dx = 0.2 # grid spacing
+    output_dir = fr'data/test_280621'
 
+    np.random.seed(346511053)
     training, validation, benchmark = split_train_test_val(data_dir)
 
-    # convert_to_h5(benchmark, os.path.join(output_dir,'benchmarkHR.h5'), dx)
-    # convert_to_h5(training, os.path.join(output_dir,'trainHR.h5'), dx)
-    # convert_to_h5(validation, os.path.join(output_dir,'validationHR.h5'), dx)
+    convert_to_h5(benchmark, os.path.join(output_dir,'benchmarkHR.h5'), dx)
+    convert_to_h5(training, os.path.join(output_dir,'trainHR.h5'), dx)
+    convert_to_h5(validation, os.path.join(output_dir,'validationHR.h5'), dx)
     
-    # create_mask(os.path.join(output_dir, 'trainHR.h5'))
-    # create_mask(os.path.join(output_dir, 'validationHR.h5'))
+    create_mask(os.path.join(output_dir, 'trainHR.h5'))
+    create_mask(os.path.join(output_dir, 'validationHR.h5'))
     create_mask(os.path.join(output_dir, 'benchmarkHR.h5')) 

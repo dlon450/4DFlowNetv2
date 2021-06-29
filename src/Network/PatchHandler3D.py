@@ -4,18 +4,21 @@ import numpy as np
 import h5py
 from scipy import ndimage
 import random
+from icecream import ic
 
 class PatchHandler3D():
     # constructor
     def __init__(self, data_dir, patch_size, res_increase, batch_size, mask_threshold=0.6):
-        self.patch_size = patch_size
+        self.patch_size = {True: res_increase*patch_size, False: patch_size}
         self.res_increase = res_increase
         self.batch_size = batch_size
         self.mask_threshold = mask_threshold
 
         # for 45' angles
-        self.actual_size = int(patch_size  * 1.5)
-        self.offset = (self.actual_size - self.patch_size) // 2
+        actual_size = int(patch_size * 1.5)
+        self.actual_size = {True: self.res_increase*actual_size, False: actual_size}
+        offset = (actual_size - patch_size) // 2
+        self.offset = {True: self.res_increase*offset, False: offset}
 
         self.data_directory = data_dir
         self.hr_colnames = ['u','v','w']
@@ -53,54 +56,54 @@ class PatchHandler3D():
                     tf.float32, tf.float32, tf.float32,
                     tf.float32, tf.float32])
 
-    def check_edge(self, start):
+    def check_edge(self, start, hr):
         '''
         Check if the start is outside of the image
         '''
         if start < 0:
             pad = np.abs(start)
-            actual_size = self.actual_size - pad
+            actual_size = self.actual_size[hr] - pad
             start = 0
         else:
             pad = 0
-            actual_size = self.actual_size
+            actual_size = self.actual_size[hr]
 
         return start, pad, actual_size
 
-    def get_extended_patch_roi(self, idx, x_start, y_start, z_start, hr=False):
+    def get_extended_patch_roi(self, idx, x_start, y_start, z_start, hr=True):
         '''
         Return the larger patch and padding
         '''
-        x_start, pad_x, actual_size_x = self.check_edge(x_start - self.offset)
-        y_start, pad_y, actual_size_y = self.check_edge(y_start - self.offset)
-        z_start, pad_z, actual_size_z = self.check_edge(z_start - self.offset)
+        x_start, pad_x, actual_size_x = self.check_edge(x_start - self.offset[hr], hr)
+        y_start, pad_y, actual_size_y = self.check_edge(y_start - self.offset[hr], hr)
+        z_start, pad_z, actual_size_z = self.check_edge(z_start - self.offset[hr], hr)
 
         roi = np.index_exp[idx, x_start:x_start + actual_size_x, y_start:y_start+actual_size_y, z_start:z_start+actual_size_z]
 
         if hr:
-            mask_roi = np.index_exp[0, x_start:x_start + actual_size_x, y_start:y_start+actual_size_y, z_start:z_start+actual_size_z]
+            mask_roi = np.index_exp[0, x_start:x_start+actual_size_x, y_start:y_start+actual_size_y, z_start:z_start+actual_size_z]
             return roi, mask_roi, (pad_x, pad_y, pad_z)
         
         return roi, (pad_x, pad_y, pad_z)
 
-    def ensure_patch_size(self, u, pad_x, pad_y, pad_z):
+    def ensure_patch_size(self, u, pad_x, pad_y, pad_z, hr=True):
         # left padding
         u = np.pad(u, ((pad_x, 0), (pad_y, 0), (pad_z, 0)))
         # print('after', u.shape)
 
         # calculate if the image is smaller than the size
-        rpad_x = self.actual_size - u.shape[0]
-        rpad_y = self.actual_size - u.shape[1]
-        rpad_z = self.actual_size - u.shape[2]
+        rpad_x = self.actual_size[hr] - u.shape[0]
+        rpad_y = self.actual_size[hr] - u.shape[1]
+        rpad_z = self.actual_size[hr] - u.shape[2]
 
         # pad it to the right or bottom
         u = np.pad(u, ((0, rpad_x), (0, rpad_y), (0, rpad_z)))
         
         return u
 
-    def crop_to_patch_size(self, u_new):
-        end = self.offset + self.patch_size
-        return u_new[self.offset: end, self.offset: end, self.offset: end]
+    def crop_to_patch_size(self, u_new, hr=True):
+        end = self.offset[hr] + self.patch_size[hr]
+        return u_new[self.offset[hr]: end, self.offset[hr]: end, self.offset[hr]: end]
 
     def load_patches_from_index_file(self, indexes):
         # Do typecasting, we need to make sure everything has the correct data type
@@ -122,33 +125,33 @@ class PatchHandler3D():
         # hr_patch_index = np.index_exp[idx, x_start*self.res_increase :x_start*self.res_increase +hr_patch_size ,y_start*self.res_increase :y_start*self.res_increase +hr_patch_size , z_start*self.res_increase :z_start*self.res_increase +hr_patch_size ]
         # mask_index = np.index_exp[0, x_start*self.res_increase :x_start*self.res_increase +hr_patch_size ,y_start*self.res_increase :y_start*self.res_increase +hr_patch_size , z_start*self.res_increase :z_start*self.res_increase +hr_patch_size ]
 
-        patch_index, (pad_x, pad_y, pad_z) = self.get_extended_patch_roi(idx, x_start, y_start, z_start)
+        patch_index, (pad_x, pad_y, pad_z) = self.get_extended_patch_roi(idx, x_start, y_start, z_start, hr=False)
         hr_patch_index, mask_index, (hrpad_x, hrpad_y, hrpad_z) = self.get_extended_patch_roi(idx, x_start*self.res_increase, y_start*self.res_increase, z_start*self.res_increase)
         u_patch, u_hr_patch, mag_u_patch, v_patch, v_hr_patch, mag_v_patch, w_patch, w_hr_patch, mag_w_patch, venc, mask_patch = self.load_vectorfield(hd5path, lr_hd5path, idx, mask_index, patch_index, hr_patch_index)
 
         # make sure the patch size match the extended size (handles edge cases)
         # print('before ensure',u_patch.shape)
         # LOWRES
-        u_patch = self.ensure_patch_size(u_patch, pad_x, pad_y, pad_z)
-        v_patch = self.ensure_patch_size(v_patch, pad_x, pad_y, pad_z)
-        w_patch = self.ensure_patch_size(w_patch, pad_x, pad_y, pad_z)
+        u_patch = self.ensure_patch_size(u_patch, pad_x, pad_y, pad_z, hr=False)
+        v_patch = self.ensure_patch_size(v_patch, pad_x, pad_y, pad_z, hr=False)
+        w_patch = self.ensure_patch_size(w_patch, pad_x, pad_y, pad_z, hr=False)
         
-        mag_u_patch = self.ensure_patch_size(mag_u_patch, pad_x, pad_y, pad_z)
-        mag_v_patch = self.ensure_patch_size(mag_v_patch, pad_x, pad_y, pad_z)
-        mag_w_patch = self.ensure_patch_size(mag_w_patch, pad_x, pad_y, pad_z)
+        mag_u_patch = self.ensure_patch_size(mag_u_patch, pad_x, pad_y, pad_z, hr=False)
+        mag_v_patch = self.ensure_patch_size(mag_v_patch, pad_x, pad_y, pad_z, hr=False)
+        mag_w_patch = self.ensure_patch_size(mag_w_patch, pad_x, pad_y, pad_z, hr=False)
 
         # HIRES
         u_hr_patch = self.ensure_patch_size(u_hr_patch, hrpad_x, hrpad_y, hrpad_z)
         v_hr_patch = self.ensure_patch_size(v_hr_patch, hrpad_x, hrpad_y, hrpad_z)
         w_hr_patch = self.ensure_patch_size(w_hr_patch, hrpad_x, hrpad_y, hrpad_z)
 
-        mask_patch = self.ensure_patch_size(mask_patch, hrpad_x, hrpad_y)
+        mask_patch = self.ensure_patch_size(mask_patch, hrpad_x, hrpad_y, hrpad_z)
         # print('after ensure', u_patch.shape)
 
         # ============ apply rotation ============ 
         if is_rotate > 0:
             additional = 0
-            if random.random < 0.2:
+            if random.random() < 0.2:
                 additional += [-1, 1][random.randint(0, 1)] * np.pi/4
 
             u_patch, v_patch, w_patch = self.apply_rotation(u_patch, v_patch, w_patch, rotation_degree_idx, rotation_plane, True, additional, 1)
@@ -156,13 +159,13 @@ class PatchHandler3D():
             mag_u_patch, mag_v_patch, mag_w_patch = self.apply_rotation(mag_u_patch, mag_v_patch, mag_w_patch, rotation_degree_idx, rotation_plane, False, additional, 1)
             mask_patch = self.rotate_object(mask_patch, rotation_degree_idx, rotation_plane, additional, 0)
             
-        u_patch = self.crop_to_patch_size(u_patch)
-        v_patch = self.crop_to_patch_size(v_patch)
-        w_patch = self.crop_to_patch_size(w_patch)
+        u_patch = self.crop_to_patch_size(u_patch, hr=False)
+        v_patch = self.crop_to_patch_size(v_patch, hr=False)
+        w_patch = self.crop_to_patch_size(w_patch, hr=False)
 
-        mag_u_patch = self.crop_to_patch_size(mag_u_patch)
-        mag_v_patch = self.crop_to_patch_size(mag_v_patch)
-        mag_w_patch = self.crop_to_patch_size(mag_w_patch)
+        mag_u_patch = self.crop_to_patch_size(mag_u_patch, hr=False)
+        mag_v_patch = self.crop_to_patch_size(mag_v_patch, hr=False)
+        mag_w_patch = self.crop_to_patch_size(mag_w_patch, hr=False)
 
         u_hr_patch = self.crop_to_patch_size(u_hr_patch)
         v_hr_patch = self.crop_to_patch_size(v_hr_patch)
@@ -370,28 +373,48 @@ def rotate(u, v, w, plane, theta, is_phase_img=True, interp_order=1):
 
     if plane == 1:
         ax = (0, 1)
-        rmat = [[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]]
+        rmat = np.array([
+            [1,             0,              0], 
+            [0, np.cos(theta), -np.sin(theta)], 
+            [0, np.sin(theta), np.cos(theta)]])
     
     elif plane == 2:
         ax = (0, 2)
-        rmat = [[np.cos(theta), 0, np.sin(theta)], [0, 1, 0], [-np.sin(theta), 0, np.cos(theta)]]
+        rmat = np.array([
+            [ np.cos(theta), 0, np.sin(theta)], 
+            [             0, 1,             0], 
+            [-np.sin(theta), 0, np.cos(theta)]])
     
     elif plane == 3:
         ax = (1, 2)
-        rmat = [[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]]
+        rmat = np.array([
+            [np.cos(theta), -np.sin(theta), 0], 
+            [np.sin(theta),  np.cos(theta), 0], 
+            [            0,              0, 1]])
     
     else:
         return u, v, w
     
-    degrees = theta*180/np.pi
+    degrees = theta*180/np.pi 
+
     if is_phase_img:
-        u_r = ndimage.rotate(np.matmul(rmat, u), angle=degrees, axes=ax, order=interp_order)
-        w_r = ndimage.rotate(np.matmul(rmat, w), angle=degrees, axes=ax, order=interp_order)
-        v_r = ndimage.rotate(np.matmul(rmat, v), angle=degrees, axes=ax, order=interp_order)
+        original_shape = u.shape
+        vmap = np.stack((u, v, w))
+        vmap = np.reshape(vmap, (3, -1)) # reshape to 3 vectors
+        rotated = rmat.dot(vmap)
+        u_r, v_r, w_r = rotated[0], rotated[1], rotated[2]
+
+        u_r = np.reshape(u_r, original_shape)
+        v_r = np.reshape(v_r, original_shape)
+        w_r = np.reshape(w_r, original_shape)
+
+        u_r = ndimage.rotate(u_r, angle=degrees, axes=ax, reshape=False, order=interp_order)
+        w_r = ndimage.rotate(w_r, angle=degrees, axes=ax, reshape=False, order=interp_order)
+        v_r = ndimage.rotate(v_r, angle=degrees, axes=ax, reshape=False, order=interp_order)
     else:
-        u_r = ndimage.rotate(u, angle=degrees, axes=ax, order=interp_order)
-        w_r = ndimage.rotate(w, angle=degrees, axes=ax, order=interp_order)
-        v_r = ndimage.rotate(v, angle=degrees, axes=ax, order=interp_order)
+        u_r = ndimage.rotate(u, angle=degrees, axes=ax, reshape=False, order=interp_order)
+        w_r = ndimage.rotate(w, angle=degrees, axes=ax, reshape=False, order=interp_order)
+        v_r = ndimage.rotate(v, angle=degrees, axes=ax, reshape=False, order=interp_order)
 
     return u_r, w_r, v_r
 

@@ -11,6 +11,7 @@ import time
 import shutil
 import os
 from .SR4DFlowNet import SR4DFlowNet
+from icecream import ic
 from . import utility, h5util, loss_utils
 
 class TrainerSetup:
@@ -81,6 +82,7 @@ class TrainerSetup:
             Calculate Total Loss function
             Loss = MSE + weight * div_loss2
         """
+        # print(y_true)
         u,v,w = y_true[:,:,:,:,0],y_true[:,:,:,:,1], y_true[:,:,:,:,2]
         u_pred,v_pred,w_pred = y_pred[:,:,:,:,0],y_pred[:,:,:,:,1], y_pred[:,:,:,:,2]
 
@@ -102,9 +104,7 @@ class TrainerSetup:
         """
             Calculate Speed magnitude error
         """
-        print(u_pred, u)
-        print(v_pred, v)
-        print(w_pred, w)
+        # print(u_pred, u)
         return (u_pred - u) ** 2 +  (v_pred - v) ** 2 + (w_pred - w) ** 2
 
     def init_model_dir(self):
@@ -157,11 +157,13 @@ class TrainerSetup:
     def train_step(self, data_pairs):
         u,v,w, u_mag, v_mag, w_mag, u_hr,v_hr, w_hr, venc, mask = data_pairs
         hires = tf.concat((u_hr, v_hr, w_hr), axis=-1)
+        print("hires --------------", hires)
         with tf.GradientTape() as tape:
             # training=True is only needed if there are layers with different
             # behavior during training versus inference (e.g. Dropout).
             input_data = [u,v,w, u_mag, v_mag, w_mag]
             predictions = self.model(input_data, training=True)
+            print("preds --------------", predictions)
             loss = self.loss_function(hires, predictions)
 
         # Get the gradients
@@ -298,6 +300,7 @@ class TrainerSetup:
         """
         for i, (data_pairs) in enumerate(testset):
             u,v,w, u_mag, v_mag, w_mag, u_hr,v_hr, w_hr, venc, mask = data_pairs
+
             hires = tf.concat((u_hr, v_hr, w_hr), axis=-1)
             input_data = [u,v,w, u_mag, v_mag, w_mag]
 
