@@ -3,14 +3,14 @@ import h5py
 from h5functions import save_to_h5
 
 if __name__ == "__main__":
-    output_name = "data/test_280621/trainG1HR.h5"
+    output_name = "data/geometry_2/trainG3HR.h5"
     u = np.zeros((72, 392, 52, 52))
     v = np.zeros((72, 392, 52, 52))
     w = np.zeros((72, 392, 52, 52))
     dx_o = np.zeros((72, 3))
     origin_o = np.zeros((72, 3))
     mask = np.zeros((1, 392, 52, 52))
-    files = [fr'data/test_280621/trainHR.h5', fr'data/test_280621/benchmarkHR.h5', fr'data/test_280621/validationHR.h5'] 
+    files = [fr'data/geometry_2/trainHR.h5', fr'data/geometry_2/benchmarkHR.h5', fr'data/geometry_2/validationHR.h5'] 
     i = 0
     first = True
     for fn in files:

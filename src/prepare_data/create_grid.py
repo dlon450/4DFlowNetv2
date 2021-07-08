@@ -20,7 +20,7 @@ class CFDResult():
             XYZ is converted to mm
         """
         names = ['xcoordinate','ycoordinate','zcoordinate','pressure','xvelocity','yvelocity','zvelocity']
-        arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=419907)
+        arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=6)
         
         x, y, z = arr['xcoordinate'], arr['ycoordinate'], arr['zcoordinate']
         
@@ -52,7 +52,7 @@ def split_train_test_val(data_dir, split=0.7):
     all_files = os.listdir(os.path.abspath(data_dir))
     data_files = list(filter(lambda file: file.endswith('.csv'), all_files))
     data_files = [data_dir + '/' + d for d in data_files]
-    shuffle(data_files)
+    # shuffle(data_files)
 
     split_index_val = int(np.floor(len(data_files) * split))
     split_index_bench = int(np.floor(len(data_files) * (split + 1) / 2))
@@ -174,9 +174,9 @@ def create_mask(filename, threshold=0.0005, interval=None):
 
 if __name__ == "__main__":
 
-    data_dir = fr'CFD Output/Model1'
+    data_dir = fr'CFD Output/Model3'
     dx = 0.2 # grid spacing
-    output_dir = fr'data/test_280621'
+    output_dir = fr'data/test_290621'
 
     np.random.seed(346511053)
     training, validation, benchmark = split_train_test_val(data_dir)

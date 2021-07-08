@@ -130,14 +130,17 @@ def downsample_HR(input_filepath, output_filename, downsample=2):
 
 if __name__ == '__main__':
     # Config
-    base_path = 'data/test_280621'
+    base_path = 'data/combined'
 
     # Downsample rate
-    downsample = 2
+    downsample = 4
 
-    input_filepaths = [f'{base_path}/trainHR.h5', f'{base_path}/validationHR.h5', f'{base_path}/benchmarkHR.h5']
-    output_filenames = [f'{base_path}/trainLR.h5', f'{base_path}/validationLR.h5', f'{base_path}/benchmarkLR.h5']
+    # input_filepaths = [f'{base_path}/trainG1HR.h5', f'{base_path}/trainG2HR.h5', f'{base_path}/trainG3HR.h5', f'{base_path}/trainG4HR.h5', f'{base_path}/trainG5HR.h5']
+    # output_filenames = [f'{base_path}/trainG1LR.h5', f'{base_path}/trainG2LR.h5', f'{base_path}/trainG3LR.h5', f'{base_path}/trainG4LR.h5', f'{base_path}/trainG5LR.h5']
 
+    input_filepaths = [f'{base_path}/trainG2HR.h5']
+    output_filenames = [f'{base_path}/trainG2LR.h5']
+    
     for i, o in zip(input_filepaths, output_filenames):
         downsample_HR(i, o, downsample)
 

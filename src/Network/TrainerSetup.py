@@ -68,7 +68,7 @@ class TrainerSetup:
         self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
         
         # Compile model so we can save the optimizer weights
-        self.model.compile(loss=self.loss_function, optimizer=self.optimizer)
+        # self.model.compile(loss=self.loss_function, optimizer=self.optimizer)
 
     def adjust_learning_rate(self, epoch):
         # For 14k rows of data and batch 20, this is ~10k iterations
@@ -77,7 +77,7 @@ class TrainerSetup:
             message = f'Learning rate adjusted to {self.optimizer.lr.numpy():.6f} - {time.ctime()}\n'
             print(message)
 
-    def loss_function(self, y_true, y_pred):
+    def loss_function(self, y_true, y_pred, mask):
         """
             Calculate Total Loss function
             Loss = MSE + weight * div_loss2
@@ -87,9 +87,28 @@ class TrainerSetup:
         u_pred,v_pred,w_pred = y_pred[:,:,:,:,0],y_pred[:,:,:,:,1], y_pred[:,:,:,:,2]
 
         mse = self.calculate_mse(u,v,w, u_pred,v_pred,w_pred)
-        divergence_loss = loss_utils.calculate_divergence_loss2(u,v,w, u_pred,v_pred,w_pred)
-        
-        return  tf.reduce_mean(mse) + self.div_weight * tf.reduce_mean(divergence_loss)
+
+        # === Separate mse ===
+        non_fluid_mask = tf.less(mask, tf.constant(0.5))
+        non_fluid_mask = tf.cast(non_fluid_mask, dtype=tf.float32)
+
+        epsilon = 1 # minimum 1 pixel
+
+        fluid_mse = mse * mask
+        fluid_mse = tf.reduce_sum(fluid_mse, axis=[1,2,3]) / (tf.reduce_sum(mask, axis=[1,2,3]) + epsilon)
+
+        non_fluid_mse = mse * non_fluid_mask
+        non_fluid_mse = tf.reduce_sum(non_fluid_mse, axis=[1,2,3]) / (tf.reduce_sum(non_fluid_mask, axis=[1,2,3]) + epsilon)
+
+        mse = fluid_mse + non_fluid_mse
+
+        # divergence_loss = loss_utils.calculate_divergence_loss2(u,v,w, u_pred,v_pred,w_pred)
+        # divergence_loss = 0
+        # total_loss = mse + divergence_loss
+
+        # return  tf.reduce_mean(mse) + self.div_weight * tf.reduce_mean(divergence_loss)
+        # return total_loss, mse, divergence_loss
+        return tf.reduce_mean(mse)
 
     def accuracy_function(self, y_true, y_pred, mask):
         """
@@ -164,7 +183,7 @@ class TrainerSetup:
             input_data = [u,v,w, u_mag, v_mag, w_mag]
             predictions = self.model(input_data, training=True)
             print("preds --------------", predictions)
-            loss = self.loss_function(hires, predictions)
+            loss = self.loss_function(hires, predictions, mask)
 
         # Get the gradients
         gradients = tape.gradient(loss, self.model.trainable_variables)
@@ -193,7 +212,7 @@ class TrainerSetup:
         # behavior during training versus inference (e.g. Dropout).
         input_data = [u,v,w, u_mag, v_mag, w_mag]
         predictions = self.model(input_data, training=False)
-        t_loss = self.loss_function(hires, predictions)
+        t_loss = self.loss_function(hires, predictions, mask)
         
 
         self.val_loss(t_loss)
@@ -306,7 +325,7 @@ class TrainerSetup:
 
             preds = self.model.predict(input_data)
 
-            loss_val = self.loss_function(hires, preds)
+            loss_val = self.loss_function(hires, preds, mask)
             rel_loss = self.accuracy_function(hires, preds, mask)
             # Do only 1 batch
             break
