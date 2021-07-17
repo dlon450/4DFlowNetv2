@@ -13,25 +13,25 @@ def load_indexes(index_file):
     return indexes
 
 if __name__ == "__main__":
-    data_dir = '../data/test_280621'
+    data_dir = '../data/combined'
     
     # ---- Patch index files ----
     training_file = '{}/train.csv'.format(data_dir)
-    validate_file = '{}/validate.csv'.format(data_dir)
+    validate_file = '{}/validation.csv'.format(data_dir)
 
     QUICKSAVE = True
     benchmark_file = '{}/benchmark.csv'.format(data_dir)
     
     # Hyperparameters optimisation variablesE
     initial_learning_rate = 1e-4
-    epochs =  150
-    batch_size = 20
+    epochs =  80
+    batch_size = 8
     mask_threshold = 0.6
 
     # Network setting
     network_name = '4DFlowNet'
-    patch_size = 16
-    res_increase = 2
+    patch_size = 12
+    res_increase = 4
     # Residual blocks, default (8 LR ResBlocks and 4 HR ResBlocks)
     low_resblock = 8
     hi_resblock = 4

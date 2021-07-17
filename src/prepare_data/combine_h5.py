@@ -5,6 +5,7 @@ import os
 
 if __name__ == "__main__":
     output_name = "data/trainG6HR.h5"
+    # output_name = "data/geometry_2/trainG3HR.h5"
     u = np.zeros((72, 392, 52, 52))
     v = np.zeros((72, 392, 52, 52))
     w = np.zeros((72, 392, 52, 52))
@@ -12,12 +13,13 @@ if __name__ == "__main__":
     origin_o = np.zeros((72, 3))
     mask = np.zeros((1, 392, 52, 52))
 
-    data_dir = 'data/test_020721'
-    all_files = os.listdir(os.path.abspath(data_dir))
-    data_files = list(filter(lambda file: file.endswith('.csv'), all_files))
-    data_files = [data_dir + '/' + d for d in data_files]
-    files = data_files
+    # data_dir = 'data/test_020721'
+    # all_files = os.listdir(os.path.abspath(data_dir))
+    # data_files = list(filter(lambda file: file.endswith('.csv'), all_files))
+    # data_files = [data_dir + '/' + d for d in data_files]
+    # files = data_files
 
+    files = [fr'data/geometry_2/trainHR.h5', fr'data/geometry_2/benchmarkHR.h5', fr'data/geometry_2/validationHR.h5'] 
     i = 0
     first = True
     for fn in files:

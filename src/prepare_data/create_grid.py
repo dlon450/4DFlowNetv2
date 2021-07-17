@@ -179,9 +179,9 @@ def create_mask(filename, threshold=0.0005, interval=None):
 
 if __name__ == "__main__":
 
-    data_dir = fr'CFD Output/Model6'
+    data_dir = fr'CFD Output/Model3'
     dx = 0.2 # grid spacing
-    output_dir = fr'data/test_020721'
+    output_dir = fr'data/test_290621'
 
     np.random.seed(346511053)
     training, validation, benchmark = split_train_test_val(data_dir, split=1)
