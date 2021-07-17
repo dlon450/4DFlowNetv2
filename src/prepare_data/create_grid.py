@@ -20,7 +20,7 @@ class CFDResult():
             XYZ is converted to mm
         """
         names = ['xcoordinate','ycoordinate','zcoordinate','pressure','xvelocity','yvelocity','zvelocity']
-        arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=419907)
+        arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=6)
         
         x, y, z = arr['xcoordinate'], arr['ycoordinate'], arr['zcoordinate']
         
@@ -52,7 +52,7 @@ def split_train_test_val(data_dir, split=0.7):
     all_files = os.listdir(os.path.abspath(data_dir))
     data_files = list(filter(lambda file: file.endswith('.csv'), all_files))
     data_files = [data_dir + '/' + d for d in data_files]
-    shuffle(data_files)
+    # shuffle(data_files)
 
     split_index_val = int(np.floor(len(data_files) * split))
     split_index_bench = int(np.floor(len(data_files) * (split + 1) / 2))
@@ -62,50 +62,55 @@ def split_train_test_val(data_dir, split=0.7):
     return training, validation, benchmark
 
 def convert_to_h5(file_list, output_name, dx):
-    first = True
+    first = False
+    current_index = 1420
     for velocity_file in file_list:
-        print(velocity_file)
-        # Load the velocity data
-        vel_cfd_res = CFDResult(velocity_file, 4)
+        if current_index >= 2080:
+            print(velocity_file)
+            # Load the velocity data
+            vel_cfd_res = CFDResult(velocity_file, 4)
 
-        # Reshape xyz coordinates
-        v_coords = np.stack((vel_cfd_res.x, vel_cfd_res.y, vel_cfd_res.z), axis=-1)
-    
-        # get min max coordinates
-        x_arr, min_x, max_x = get_minmax_arr(v_coords[:,0], dx)
-        y_arr, min_y, max_y = get_minmax_arr(v_coords[:,1], dx)
-        z_arr, min_z, max_z = get_minmax_arr(v_coords[:,2], dx)
+            # Reshape xyz coordinates
+            v_coords = np.stack((vel_cfd_res.x, vel_cfd_res.y, vel_cfd_res.z), axis=-1)
+        
+            # get min max coordinates
+            x_arr, min_x, max_x = get_minmax_arr(v_coords[:,0], dx)
+            y_arr, min_y, max_y = get_minmax_arr(v_coords[:,1], dx)
+            z_arr, min_z, max_z = get_minmax_arr(v_coords[:,2], dx)
 
-        xx, yy, zz = np.mgrid[min_x:max_x: dx, min_y:max_y:dx, min_z:max_z:dx]
-        ic(len(yy), len(zz))
-        yy = np.asarray(yy)
-        zz = np.asarray(zz)
-        ic(xx.shape, yy.shape, zz.shape)
+            xx, yy, zz = np.mgrid[min_x:max_x: dx, min_y:max_y:dx, min_z:max_z:dx]
+            ic(len(yy), len(zz))
+            yy = np.asarray(yy)
+            zz = np.asarray(zz)
+            ic(xx.shape, yy.shape, zz.shape)
 
-        # msv.multi_slice_viewer(interpolate_mask(v_coords, xx, yy, zz), slice_axis=1)
-        # break
+            # msv.multi_slice_viewer(interpolate_mask(v_coords, xx, yy, zz), slice_axis=1)
+            # break
 
-        # Prepare interpolator
-        print("Preparing velocity interpolation")
-        interpolator_vx = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vx)
-        interpolator_vy = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vy)
-        interpolator_vz = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vz)
+            # Prepare interpolator
+            print("Preparing velocity interpolation")
+            interpolator_vx = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vx)
+            interpolator_vy = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vy)
+            interpolator_vz = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vz)
 
-        print("Interpolating...")
-        vx1 = interpolator_vx(xx,yy,zz)
-        vy1 = interpolator_vy(xx,yy,zz)
-        vz1 = interpolator_vz(xx,yy,zz)
+            print("Interpolating...")
+            vx1 = interpolator_vx(xx,yy,zz)
+            vy1 = interpolator_vy(xx,yy,zz)
+            vz1 = interpolator_vz(xx,yy,zz)
 
-        # ic(vx1.shape)
-        vx1 = np.nan_to_num(vx1)
-        vy1 = np.nan_to_num(vy1)
-        vz1 = np.nan_to_num(vz1)
+            # ic(vx1.shape)
+            vx1 = np.nan_to_num(vx1)
+            vy1 = np.nan_to_num(vy1)
+            vz1 = np.nan_to_num(vz1)
 
-        save_to_h5(output_name, f"dx", (dx,dx,dx))
-        save_to_h5(output_name, f"origin", (min_x,min_y,min_z))
-        save_to_h5(output_name, f"u", vx1)
-        save_to_h5(output_name, f"v", vy1)
-        save_to_h5(output_name, f"w", vz1)
+            outname = output_name + str(current_index)
+            save_to_h5(outname, f"dx", (dx,dx,dx))
+            save_to_h5(outname, f"origin", (min_x,min_y,min_z))
+            save_to_h5(outname, f"u", vx1)
+            save_to_h5(outname, f"v", vy1)
+            save_to_h5(outname, f"w", vz1)
+
+        current_index += 10
 
         if first:
             print("Interpolating mask...")
@@ -174,17 +179,17 @@ def create_mask(filename, threshold=0.0005, interval=None):
 
 if __name__ == "__main__":
 
-    data_dir = fr'CFD Output/Model1'
+    data_dir = fr'CFD Output/Model6'
     dx = 0.2 # grid spacing
-    output_dir = fr'data/test_280621'
+    output_dir = fr'data/test_020721'
 
     np.random.seed(346511053)
-    training, validation, benchmark = split_train_test_val(data_dir)
+    training, validation, benchmark = split_train_test_val(data_dir, split=1)
 
-    convert_to_h5(benchmark, os.path.join(output_dir,'benchmarkHR.h5'), dx)
-    convert_to_h5(training, os.path.join(output_dir,'trainHR.h5'), dx)
-    convert_to_h5(validation, os.path.join(output_dir,'validationHR.h5'), dx)
+    # convert_to_h5(benchmark, os.path.join(output_dir,'benchmarkHR.h5'), dx)
+    convert_to_h5(training, os.path.join(output_dir,'trainG6HR.h5'), dx)
+    # convert_to_h5(validation, os.path.join(output_dir,'validationHR.h5'), dx)
     
-    create_mask(os.path.join(output_dir, 'trainHR.h5'))
-    create_mask(os.path.join(output_dir, 'validationHR.h5'))
-    create_mask(os.path.join(output_dir, 'benchmarkHR.h5')) 
+    create_mask(os.path.join(output_dir, 'trainG6HR.h5'))
+    # create_mask(os.path.join(output_dir, 'validationHR.h5'))
+    # create_mask(os.path.join(output_dir, 'benchmarkHR.h5')) 
