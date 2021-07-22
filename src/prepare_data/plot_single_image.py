@@ -6,39 +6,45 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    quicksave = True
+    quicksave = False
 
     if quicksave:
         upsample_rate = 4
-        filepath = r'C:\Users\dlon450\Documents\4DFlowNetv2\models\4DFlowNet_20210705-1126'
+        filepath = r'C:\Users\longd\OneDrive - The University of Auckland\Documents\2021\ENGSCI 700A\4DFlowNetv2\models\4DFlowNet'
         filename = r'quicksave_4DFlowNet'
     else:
-        filepath = r'data/combined'
-        filename = r'trainG5HR'
-    
-    input_filepath = f'{filepath}/{filename}.h5'
+        filepath = r'models'
+        filename = r'densenet_result'
+
+
+    input_filepath = f'{filepath}\{filename}.h5'
 
     # colname = 'mag_v'
-    for colname in ['v']:
-        idx = 0
-        for i in range(17,18):
+    for colname in ['u']:
+        idx = 7
+        for i in range(10,61,25):
             with h5py.File(input_filepath, 'r') as hf:
                 if quicksave:
-                    img = np.asarray(hf.get(colname)[i][idx])
-                    img2 = np.asarray(hf.get('hr_v')[0])
-                    img3 = np.asarray(hf.get('lr_v')[0])
+                    img = np.asarray(hf.get(colname)[25][idx])
+                    img2 = np.asarray(hf.get('hr_v')[idx])
+                    img3 = np.asarray(hf.get('lr_v')[idx])
                     img3 = np.squeeze(img3)
                     print(img3.shape)
                 else:
-                    img = np.asarray(hf.get(colname)[idx])
+                    img = np.asarray(hf.get(colname)[i])
 
-            # img = ndimage.zoom(img, 2, order=3)
-            # msv.multi_slice_viewer(img, slice_axis=0)
-            minval, maxval = np.min(img),np.max(img)
-            plt.subplot(131), plt.imshow(img[24], cmap='jet', clim=[minval, maxval])
-            plt.subplot(132), plt.imshow(img2[24], cmap='jet', clim=[minval, maxval])
-            plt.subplot(133), plt.imshow(img3[24//upsample_rate], cmap='jet', clim=[minval, maxval])
-            plt.colorbar()
-            plt.show()      
-    
+            if quicksave:
+                minval, maxval = np.min(img),np.max(img)
+                # minval, maxval = -0.1, 0.2
+                plt.subplot(131), plt.imshow(img[24], cmap='jet', clim=[minval, maxval])
+                plt.subplot(132), plt.imshow(img2[24], cmap='jet', clim=[minval, maxval])
+                plt.subplot(133), plt.imshow(img3[24//upsample_rate], cmap='jet', clim=[minval, maxval])
+                plt.colorbar()
+                plt.show()    
+            else:
+                minval = -0.10
+                maxval = 0.7
+                msv.multi_slice_viewer(img, slice_axis=0, clim=[minval, maxval])
+                # msv.multi_slice_viewer(img, slice_axis=0)
+            
     print(img.shape)

@@ -22,7 +22,7 @@ def prepare_network(patch_size, res_increase, low_resblock, hi_resblock):
     input_layer = [u,v,w,u_mag, v_mag, w_mag]
 
     # network & output
-    net = SR4DFlowNet(res_increase)
+    net = SR4DFlowNet(res_increase, 'resnet_block')
     prediction = net.build_network(u, v, w, u_mag, v_mag, w_mag, low_resblock, hi_resblock)
     model = tf.keras.Model(input_layer, prediction)
 
@@ -30,15 +30,15 @@ def prepare_network(patch_size, res_increase, low_resblock, hi_resblock):
 
 if __name__ == '__main__':
     data_dir = '../data'
-    filename = 'example_data.h5'
+    filename = 'trainG4LR.h5'
  
-    output_dir = "../result"
+    output_dir = "result"
     output_filename = 'example_result.h5'
     
-    model_path = "../models/4DFlowNet/4DFlowNet.h5"
+    model_path = "../models/4DFlowNet/4DFlowNet_weights.h5"
     # Params
-    patch_size = 24
-    res_increase = 2
+    patch_size = 16
+    res_increase = 4
     batch_size = 8
     round_small_values = True
 
@@ -53,6 +53,9 @@ if __name__ == '__main__':
 
     # Check the number of rows in the file
     nr_rows = dataset.get_dataset_len(input_filepath)
+
+    nr_rows = 1
+
     print(f"Number of rows in dataset: {nr_rows}")
 
     print(f"Loading 4DFlowNet: {res_increase}x upsample")
