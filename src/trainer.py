@@ -22,7 +22,7 @@ if __name__ == "__main__":
     QUICKSAVE = True
     benchmark_file = '{}/benchmark.csv'.format(data_dir)
     
-    # Hyperparameters optimisation variablesE
+    # Hyperparameters optimisation variables
     initial_learning_rate = 1e-4
     epochs =  80
     batch_size = 8

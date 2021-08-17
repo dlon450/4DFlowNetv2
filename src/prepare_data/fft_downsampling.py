@@ -46,7 +46,7 @@ def add_complex_signal_noise(imgfft, targetSNRdb):
         Half the variance is in the I channel, and half is in the Q channel.  "
 
     """    
-    add_complex_noise =True
+    add_complex_noise = True
     # adding noise on the real and complex image
     # print("--------------Adding Gauss noise to COMPLEX signal----------------")
 

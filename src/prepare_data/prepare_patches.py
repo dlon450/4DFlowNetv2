@@ -36,14 +36,14 @@ def generate_patches_csv(lr_file, hr_file, output_filename, patch_size=16, n_pat
 
 if __name__ == "__main__": 
     patch_size = 12 # Patch size, this will be checked to make sure the generated patches do not go out of bounds
-    n_patch = 23 # number of patch per time frame
+    n_patch = 10 # number of patch per time frame
     n_empty_patch_allowed = 0 # max number of empty patch per frame
     all_rotation = False # When true, include 90,180, and 270 rotation for each patch. When False, only include 1 random rotation.
     mask_threshold = 0.4 # Threshold for non-binary mask 
     minimum_coverage = 0.2 # Minimum fluid region within a patch. Any patch with less than this coverage will not be taken. Range 0-1
     args = [patch_size, n_patch, n_empty_patch_allowed, all_rotation, mask_threshold, minimum_coverage]
 
-    base_path = 'data/combined'
+    base_path = 'data'
     # lr_files = ['trainLR.h5', 'validationLR.h5', 'benchmarkLR.h5']
     # hr_files = ['trainHR.h5', 'validationHR.h5', 'benchmarkHR.h5']
     # output_filenames = [f'{base_path}/train.csv', f'{base_path}/validate.csv', f'{base_path}/benchmark.csv']
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     }
 
     files_dict = {
-        'train2.csv': [['trainG3LR.h5'], ['trainG3HR.h5']],
+        'validation.csv': [['trainG4LR.h5'], ['trainG4HR.h5']],
     }
 
     for output_filename, files in files_dict.items():

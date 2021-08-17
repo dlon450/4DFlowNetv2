@@ -14,7 +14,9 @@ if __name__ == "__main__":
         filename = r'quicksave_4DFlowNet'
     else:
         filepath = r'models'
-        filename = r'densenet_result'
+        filename = r'resnet_noAliasing_G4'
+        mask = False
+        maskname = 'mask'
 
 
     input_filepath = f'{filepath}\{filename}.h5'
@@ -31,7 +33,10 @@ if __name__ == "__main__":
                     img3 = np.squeeze(img3)
                     print(img3.shape)
                 else:
-                    img = np.asarray(hf.get(colname)[i])
+                    if mask:
+                        img = np.asarray(hf.get(maskname)[0])
+                    else:
+                        img = np.asarray(hf.get(colname)[i])
 
             if quicksave:
                 minval, maxval = np.min(img),np.max(img)
@@ -43,7 +48,7 @@ if __name__ == "__main__":
                 plt.show()    
             else:
                 minval = -0.10
-                maxval = 0.7
+                maxval = .7
                 msv.multi_slice_viewer(img, slice_axis=0, clim=[minval, maxval])
                 # msv.multi_slice_viewer(img, slice_axis=0)
             

@@ -13,7 +13,7 @@ def choose_venc_type():
     my_list = ['same'] * 68 + ['diff'] * 32
     return random.choice(my_list)
 
-def choose_venc(venc_values, max_vel, pr=0.1):
+def choose_venc(venc_values, max_vel, pr=0.):
     '''
         Probability pr (default 0.1) that venc will be lower than max velocity.
     '''
@@ -130,7 +130,7 @@ def downsample_HR(input_filepath, output_filename, downsample=2):
 
 if __name__ == '__main__':
     # Config
-    base_path = 'data/combined'
+    base_path = 'data'
 
     # Downsample rate
     downsample = 4
@@ -138,8 +138,8 @@ if __name__ == '__main__':
     # input_filepaths = [f'{base_path}/trainG1HR.h5', f'{base_path}/trainG2HR.h5', f'{base_path}/trainG3HR.h5', f'{base_path}/trainG4HR.h5', f'{base_path}/trainG5HR.h5']
     # output_filenames = [f'{base_path}/trainG1LR.h5', f'{base_path}/trainG2LR.h5', f'{base_path}/trainG3LR.h5', f'{base_path}/trainG4LR.h5', f'{base_path}/trainG5LR.h5']
 
-    input_filepaths = [f'{base_path}/trainG2HR.h5']
-    output_filenames = [f'{base_path}/trainG2LR.h5']
+    input_filepaths = [f'{base_path}/trainG5HR.h5']
+    output_filenames = [f'{base_path}/trainG5LR.h5']
     
     for i, o in zip(input_filepaths, output_filenames):
         downsample_HR(i, o, downsample)

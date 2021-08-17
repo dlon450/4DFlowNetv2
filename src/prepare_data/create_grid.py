@@ -6,6 +6,7 @@ import os
 from random import shuffle
 import h5py
 import multi_slice_viewer as msv
+from scipy.spatial import Delaunay
 
 from scipy.spatial import KDTree
 from h5functions import save_to_h5
@@ -86,12 +87,13 @@ def convert_to_h5(file_list, output_name, dx):
 
             # msv.multi_slice_viewer(interpolate_mask(v_coords, xx, yy, zz), slice_axis=1)
             # break
+            tri = Delaunay(v_coords)
 
             # Prepare interpolator
             print("Preparing velocity interpolation")
-            interpolator_vx = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vx)
-            interpolator_vy = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vy)
-            interpolator_vz = sc.LinearNDInterpolator(v_coords, vel_cfd_res.vz)
+            interpolator_vx = sc.LinearNDInterpolator(tri, vel_cfd_res.vx)
+            interpolator_vy = sc.LinearNDInterpolator(tri, vel_cfd_res.vy)
+            interpolator_vz = sc.LinearNDInterpolator(tri, vel_cfd_res.vz)
 
             print("Interpolating...")
             vx1 = interpolator_vx(xx,yy,zz)
@@ -130,66 +132,68 @@ def interpolate_mask(v_coords, xx, yy, zz):
 
 def create_mask(filename, threshold=0.0005, interval=None):
     with h5py.File(filename, mode = 'r' ) as hf:
-        vx1 = np.asarray(hf['u'][0])
-        vy1 = np.asarray(hf['v'][0])
-        vz1 = np.asarray(hf['w'][0])
+        vx1 = np.asarray(hf['u'][35])
+        vy1 = np.asarray(hf['v'][35])
+        vz1 = np.asarray(hf['w'][35])
 
-        mask = np.asarray(hf['maski'][0])
+        maski = np.asarray(hf['maski'][0])
 
-    # # mask = np.zeros(vx1.shape, dtype='int')
-    # a = np.array([1., 50., 10.])
+    skip = 20
+    mid = skip + np.argmin(maski[skip:maski.shape[0]-skip].sum(axis=1).sum(axis=1))
 
-    # if interval is None:
-    #     # thresholding using the average velocity
-    #     for i in range(mask.shape[0]):
-    #         matrix = a[0]*vx1[i]**2 + a[1]*vy1[i]**2 + a[2]*vz1[i]**2
-    #         mask[i] = np.where(matrix > np.true_divide(matrix.sum(), 1+5*(matrix >= 1e-06).sum()), 1, 0)
+    mask = np.zeros(vx1.shape, dtype='int')
+    a = np.array([1., 50., 10.])
 
-    #     # find the thinnest part of geometry
-    #     skip = 10
-    #     mid = skip + np.argmin(mask[skip:].sum(axis=1).sum(axis=1))
+    if interval is None:
+        # thresholding using the average velocity
+        for i in range(mask.shape[0]):
+            matrix = a[0]*vx1[i]**2 + a[1]*vy1[i]**2 + a[2]*vz1[i]**2
+            mask[i] = np.where(matrix > np.true_divide(matrix.sum(), 1+5*(matrix >= 1e-06).sum()), 1, 0)
         
-    #     interval = [int(mid - 0.05*mask.shape[0]), int(mid + 0.05*mask.shape[0])]
-    #     # thresholding outer section with constant
-    #     matrix = vx1**2 + vy1**2 + vz1**2
-    #     mask_outer = np.where(matrix > threshold, 1, 0)
-    #     mask = np.concatenate((mask_outer[:interval[0]], mask[interval[0]:interval[1]], mask_outer[interval[1]:]))
-    
-    # else:
-    #     # thresholding with constant
-    #     matrix = vx1**2 + vy1**2 + vz1**2
-    #     mask = np.where(matrix > threshold, 1, 0)
+        interval = [int(mid - 0.05*mask.shape[0]), int(mid + 0.05*mask.shape[0])]
+        interval = [110, 143]
 
-    #     # thresholding using the average velocity
-    #     for i in range(interval[0], interval[1]):
-    #         matrix = a[0]*vx1[i]**2 + a[1]*vy1[i]**2 + a[2]*vz1[i]**2
-    #         mask[i] = np.where(matrix > np.true_divide(matrix.sum(), 1+5*(matrix >= 1e-06).sum()), 1, 0)
+        # thresholding outer section with constant
+        matrix = vx1**2 + vy1**2 + vz1**2
+        mask_outer = np.where(matrix > threshold, 1, 0)
+        mask = np.concatenate((mask_outer[:interval[0]], mask[interval[0]:interval[1]] + 1, mask_outer[interval[1]:]))
+        msv.multi_slice_viewer(mask, slice_axis=1)
+        mask = mask*maski
+        msv.multi_slice_viewer(mask, slice_axis=1)
 
-    #     # find the thinnest part of geometry
-    #     skip = 10
-    #     mid = skip + np.argmin(mask[skip:].sum(axis=1).sum(axis=1))
+    else:
+        # thresholding with constant
+        matrix = vx1**2 + vy1**2 + vz1**2
+        mask = np.where(matrix > threshold, 1, 0)
+
+        # thresholding using the average velocity
+        for i in range(interval[0], interval[1]):
+            matrix = a[0]*vx1[i]**2 + a[1]*vy1[i]**2 + a[2]*vz1[i]**2
+            mask[i] = np.where(matrix > np.true_divide(matrix.sum(), 1+5*(matrix >= 1e-06).sum()), 1, 0)
+
+        # find the thinnest part of geometry
+        skip = 10
+        mid = skip + np.argmin(mask[skip:].sum(axis=1).sum(axis=1))
 
     # ensuring consistency in structure/geometry
-    skip = 10
-    mid = skip + np.argmin(mask[skip:].sum(axis=1).sum(axis=1))
     updated_mask = np.concatenate((np.cumsum(mask[:mid][::-1], axis=0)[::-1], np.cumsum(mask[mid:], axis=0)))
     updated_mask = np.where(updated_mask != 0, 1, 0)
-
+    msv.multi_slice_viewer(updated_mask, slice_axis=0)
     save_to_h5(filename, f"mask", updated_mask)
 
 if __name__ == "__main__":
 
-    data_dir = fr'CFD Output/Model3'
+    data_dir = fr'CFD Output/Model8'
     dx = 0.2 # grid spacing
-    output_dir = fr'data/test_290621'
+    output_dir = fr'data'
 
     np.random.seed(346511053)
     training, validation, benchmark = split_train_test_val(data_dir, split=1)
 
     # convert_to_h5(benchmark, os.path.join(output_dir,'benchmarkHR.h5'), dx)
-    convert_to_h5(training, os.path.join(output_dir,'trainG6HR.h5'), dx)
+    # convert_to_h5(training, os.path.join(output_dir,'trainG8HR.h5'), dx)
     # convert_to_h5(validation, os.path.join(output_dir,'validationHR.h5'), dx)
     
-    create_mask(os.path.join(output_dir, 'trainG6HR.h5'))
+    create_mask(os.path.join(output_dir, 'trainG5HR.h5'))
     # create_mask(os.path.join(output_dir, 'validationHR.h5'))
     # create_mask(os.path.join(output_dir, 'benchmarkHR.h5')) 
