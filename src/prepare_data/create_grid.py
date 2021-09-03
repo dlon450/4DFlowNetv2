@@ -194,6 +194,6 @@ if __name__ == "__main__":
     # convert_to_h5(training, os.path.join(output_dir,'trainG8HR.h5'), dx)
     # convert_to_h5(validation, os.path.join(output_dir,'validationHR.h5'), dx)
     
-    create_mask(os.path.join(output_dir, 'trainG5HR.h5'))
+    create_mask(os.path.join(output_dir, 'trainG3HR.h5'))
     # create_mask(os.path.join(output_dir, 'validationHR.h5'))
     # create_mask(os.path.join(output_dir, 'benchmarkHR.h5')) 

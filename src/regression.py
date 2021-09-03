@@ -1,31 +1,12 @@
-from operator import sub
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
+from icecream import ic
 
-def rotate(u, v, w, plane, theta):
-    x = [u, v, w]
-
-    if plane == 1:
-        ax = (0, 1)
-        rmat = [[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]]
-
-    elif plane == 2:
-        ax = (0, 2)
-        rmat = [[np.cos(theta), 0, np.sin(theta)], [0, 1, 0], [-np.sin(theta), 0, np.cos(theta)]]
-
-    elif plane == 3:
-        ax = (1, 2)
-        rmat = [[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]]
-
-    else:
-        return u, v, w
-        
-    x = np.matmul(rmat, x)
-
-    return x[0], x[1], x[2]
-
-def regression(hr_filepath, pred_filepath, ts=30, all=True):
+def regression(hr_filepath, pred_filepath, ts=26, all=True):
+    '''
+    Plot regression plots for each velocity and return the RMSE
+    '''
     with h5py.File(hr_filepath, 'r') as hf:
         vx = np.asarray(hf['u'])[ts]
         vy = np.asarray(hf['v'])[ts]
@@ -51,10 +32,24 @@ def regression(hr_filepath, pred_filepath, ts=30, all=True):
     pvz = pvz.ravel()[subset]
     pvm = np.sqrt(pvx**2+pvy**2+pvz**2) 
     
-    sepvx = np.std(pvx)
-    sepvy = np.std(pvy)
-    sepvz = np.std(pvz)
-    sepvm = np.std(pvm)
+    peakvx = max(pvx)
+    peakvy = max(pvy)
+    peakvz = max(pvz)
+    peakvm = max(pvm)
+
+    ic(peakvx, peakvy, peakvz, peakvm)
+    
+    errorx = vxs - pvx
+    errory = vys - pvy
+    errorz = vzs - pvz
+    errorm = vms - pvm
+
+    sepvx = np.std(errorx)
+    sepvy = np.std(errory)
+    sepvz = np.std(errorz)
+    sepvm = np.std(errorm)
+
+    ic(sepvx, sepvy, sepvz, sepvm)
 
     i = 0
     subplot_num = 421
@@ -64,12 +59,12 @@ def regression(hr_filepath, pred_filepath, ts=30, all=True):
         for vi, pvi, sepvi in zip([vxs, vys, vzs, vms], [pvx, pvy, pvz, pvm], [sepvx, sepvy, sepvz, sepvm]):
             xhrsr = (vi+pvi)/2
             m, b = np.polyfit(xhrsr, pvi, 1)
-            plt.subplot(subplot_num+i), plt.scatter(xhrsr, pvi, s=0.2, alpha=0.01, c='black'), plt.title(titles[i//2])
-            plt.subplot(subplot_num+i), plt.plot(xhrsr, m*xhrsr + b, alpha=0.5), plt.title(titles[i//2])
+            plt.subplot(subplot_num+i), plt.scatter(xhrsr, pvi, s=0.2, alpha=0.1, c='black')#, plt.title(titles[i//2])
+            plt.subplot(subplot_num+i), plt.plot(xhrsr, m*xhrsr + b, alpha=0.5)#, plt.title(titles[i//2])
             i += 1
-            plt.subplot(subplot_num+i), plt.scatter(xhrsr, pvi-vi, s=0.2, alpha=0.01, c='black'), plt.title("sfwe")
-            plt.subplot(subplot_num+i), plt.plot(xhrsr, np.repeat(sepvi, length), '--', alpha=0.5), plt.title(titles[i//2])
-            plt.subplot(subplot_num+i), plt.plot(xhrsr, np.repeat(-sepvi, length), '--', alpha=0.5), plt.title(titles[i//2])
+            plt.subplot(subplot_num+i), plt.scatter(xhrsr, pvi-vi, s=0.2, alpha=0.1, c='black'), plt.title("")
+            plt.subplot(subplot_num+i), plt.plot(xhrsr, np.repeat(sepvi, length), '--', alpha=0.5)
+            plt.subplot(subplot_num+i), plt.plot(xhrsr, np.repeat(-sepvi, length), '--', alpha=0.5)
             i += 1
 
         plt.tight_layout()
@@ -90,18 +85,12 @@ def regression(hr_filepath, pred_filepath, ts=30, all=True):
             plt.plot(xhrsr, np.repeat(-sepvi, length), '--', alpha=0.5), plt.title(titles[i//2])
             plt.show()
             
-    return np.mean((vxs-pvx)**2) + np.mean((vys-pvy)**2) + np.mean((vzs-pvz)**2)
+    return np.sqrt(np.mean((errorx)**2)), np.sqrt(np.mean((errory)**2)), np.sqrt(np.mean((errorz)**2))
 
 if __name__ == '__main__':
-    u = np.array([2, 2.1, 1.9, 2.2, 2.])
-    v = np.array([1.5, 1.6, 1.4, 1.7, 1.2])
-    w = np.array([0., 0.1, -0.1, -0.2, 0.])
 
-    # u, v, w = rotate(u, v, w, 1, np.pi*1.5)
-    # print(u, v, w)
+    hr_filepath = "data/Unused Geometries/trainG4HR.h5"
+    pred_filepath = "result/base4x_result.h5"
 
-    hr_filepath = "data/trainG4HR.h5"
-    pred_filepath = "result/cspnet_noAliasing_G5_G4.h5"
-
-    total_mspe = regression(hr_filepath, pred_filepath)
-    print(total_mspe)
+    rmsex, rmsey, rmsez = regression(hr_filepath, pred_filepath)
+    ic(rmsex, rmsey, rmsez)

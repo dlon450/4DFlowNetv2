@@ -57,7 +57,7 @@ if __name__ == "__main__":
     }
 
     files_dict = {
-        'validation.csv': [['trainG4LR.h5'], ['trainG4HR.h5']],
+        'train4.csv': [['trainG11LR.h5'], ['trainG11HR.h5']],
     }
 
     for output_filename, files in files_dict.items():

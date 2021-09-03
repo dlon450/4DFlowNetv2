@@ -13,7 +13,7 @@ def load_indexes(index_file):
     return indexes
 
 if __name__ == "__main__":
-    data_dir = '../data/combined'
+    data_dir = '../data/FiveGeoms'
     
     # ---- Patch index files ----
     training_file = '{}/train.csv'.format(data_dir)
@@ -22,16 +22,19 @@ if __name__ == "__main__":
     QUICKSAVE = True
     benchmark_file = '{}/benchmark.csv'.format(data_dir)
     
-    # Hyperparameters optimisation variables
+    # Hyperparameters optimisation variablesE
     initial_learning_rate = 1e-4
     epochs =  80
     batch_size = 8
     mask_threshold = 0.6
 
     # Network setting
-    network_name = '4DFlowNet'
+    network_name = '4DFlowNet_CSPNet_5Geom'
     patch_size = 12
     res_increase = 4
+    restore = False
+    restore_folder = '../models/4DFlowNet_ResNet_5Geom_20210901-0847'
+    restore_fn = '4DFlowNet_ResNet_5Geom_weights.h5'
     # Residual blocks, default (8 LR ResBlocks and 4 HR ResBlocks)
     low_resblock = 8
     hi_resblock = 4
@@ -60,6 +63,6 @@ if __name__ == "__main__":
 
     # ------- Main Network ------
     print(f"4DFlowNet Patch {patch_size}, lr {initial_learning_rate}, batch {batch_size}")
-    network = TrainerSetup(patch_size, res_increase, initial_learning_rate, QUICKSAVE, network_name, low_resblock, hi_resblock)
+    network = TrainerSetup(patch_size, res_increase, initial_learning_rate, QUICKSAVE, network_name, low_resblock, hi_resblock, restore, restore_folder, restore_fn)
     network.init_model_dir()
     network.train_network(trainset, valset, n_epoch=epochs, testset=testset)

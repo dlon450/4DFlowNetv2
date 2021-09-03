@@ -1,8 +1,9 @@
-from os import P_DETACH
 import tensorflow as tf
+# from tensorflow.python.framework.ops import disable_eager_execution
+# disable_eager_execution()
 
 class SR4DFlowNet():
-    def __init__(self, res_increase, block='csp_block'):
+    def __init__(self, res_increase, block='cspnet_block'):
         self.res_increase = res_increase
         self.block = block
 
@@ -149,5 +150,3 @@ def csp_block(x, num_layers, block_name='CSPBlock', channel_nr=64, scale = 1, pa
 #     tmp = tf.keras.layers.AveragePooling3D()(tmp)
     
 #     return tmp
-
-# 2.6 seconds per batch of 20

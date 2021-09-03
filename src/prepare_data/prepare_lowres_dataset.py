@@ -138,8 +138,8 @@ if __name__ == '__main__':
     # input_filepaths = [f'{base_path}/trainG1HR.h5', f'{base_path}/trainG2HR.h5', f'{base_path}/trainG3HR.h5', f'{base_path}/trainG4HR.h5', f'{base_path}/trainG5HR.h5']
     # output_filenames = [f'{base_path}/trainG1LR.h5', f'{base_path}/trainG2LR.h5', f'{base_path}/trainG3LR.h5', f'{base_path}/trainG4LR.h5', f'{base_path}/trainG5LR.h5']
 
-    input_filepaths = [f'{base_path}/trainG5HR.h5']
-    output_filenames = [f'{base_path}/trainG5LR.h5']
+    input_filepaths = [f'{base_path}/trainG2HR.h5']
+    output_filenames = [f'{base_path}/trainG2LR.h5']
     
     for i, o in zip(input_filepaths, output_filenames):
         downsample_HR(i, o, downsample)

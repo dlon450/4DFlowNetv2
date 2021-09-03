@@ -1,7 +1,7 @@
 """
-4DFlowNet: Super Resolution ResNet
-Author: Edward Ferdian
-Date:   14/06/2019
+4DFlowNet: Super Resolution Network
+Author: Derek Long
+Date:   03/09/2021
 """
 import pickle
 import tensorflow as tf
@@ -16,7 +16,7 @@ from . import utility, h5util, loss_utils
 
 class TrainerSetup:
     # constructor
-    def __init__(self, patch_size, res_increase, initial_learning_rate=1e-4, quicksave_enable=True, network_name='4DFlowNet', low_resblock=8, hi_resblock=4):
+    def __init__(self, patch_size, res_increase, initial_learning_rate=1e-4, quicksave_enable=True, network_name='4DFlowNet', low_resblock=8, hi_resblock=4, restore=False, restore_folder=None, restore_fn=None):
         """
             TrainerSetup constructor
             Setup all the placeholders, network graph, loss functions and optimizer here.
@@ -68,7 +68,8 @@ class TrainerSetup:
         self.optimizer = tf.keras.optimizers.Adam(lr=self.learning_rate)
         
         # Restore model
-        # self.restore_model()
+        if restore:
+          self.restore_model(restore_folder, restore_fn)
         # Compile model so we can save the optimizer weights
         # self.model.compile(loss=self.loss_function, optimizer=self.optimizer)
 
@@ -306,8 +307,7 @@ class TrainerSetup:
         utility.log_to_file(self.logfile, message)
         print(message)
 
-
-    def restore_model(self, old_model_dir, old_model_file):
+    def restore_model(self, old_model_dir='../models/4DFlowNet_20210819-1125', old_model_file='4DFlowNet_weights.h5'):
         """
             Restore model weights and optimizer weights for uncompiled model
             Based on: https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
@@ -336,6 +336,7 @@ class TrainerSetup:
         self.optimizer.set_weights(opt_weights)
 
         # NOW set the trainable weights of the model
+        ic(model_weights_path)
         self.model.load_weights(model_weights_path)
 
     def _update_summary_logging(self, epoch):

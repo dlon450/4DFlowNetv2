@@ -13,11 +13,10 @@ if __name__ == "__main__":
         filepath = r'C:\Users\longd\OneDrive - The University of Auckland\Documents\2021\ENGSCI 700A\4DFlowNetv2\models\4DFlowNet'
         filename = r'quicksave_4DFlowNet'
     else:
-        filepath = r'models'
-        filename = r'resnet_noAliasing_G4'
-        mask = False
-        maskname = 'mask'
-
+        filepath = r'data'
+        filename = r'trainG11HR'
+        mask = True
+        maskname = 'maski'
 
     input_filepath = f'{filepath}\{filename}.h5'
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
             else:
                 minval = -0.10
                 maxval = .7
-                msv.multi_slice_viewer(img, slice_axis=0, clim=[minval, maxval])
+                msv.multi_slice_viewer(img, slice_axis=2, clim=[minval, maxval])
                 # msv.multi_slice_viewer(img, slice_axis=0)
             
     print(img.shape)
