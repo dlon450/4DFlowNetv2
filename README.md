@@ -1,5 +1,5 @@
 # 4DFlowNetv2
-Refined adaptation of Super Resolution 4D Flow MRI using Residual Neural Network
+Refined adaptation of Super Resolution 4D Flow MRI using Cross-Stage Partial Neural Network
 
 This is a refinement of the [original 4DFlowNet repository](https://github.com/EdwardFerdian/4DFlowNet) using Tensorflow 2.0 with Keras. Changes include:
 * Experimentation with dense and cross-partial blocks instead of residual ones
