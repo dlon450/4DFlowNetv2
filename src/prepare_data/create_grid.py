@@ -20,7 +20,7 @@ class CFDResult():
             Read xyz coordinates and pressure from CFD results (.csv)
             XYZ is converted to mm
         """
-        names = ['xcoordinate','ycoordinate','zcoordinate','pressure','xvelocity','yvelocity','zvelocity']
+        names = ['xcoordinate','ycoordinate','zcoordinate','pressure','velocitymagnitude','xvelocity','yvelocity','zvelocity']
         arr = np.genfromtxt(filepath, delimiter=',', names=names, skip_header=6)
         
         x, y, z = arr['xcoordinate'], arr['ycoordinate'], arr['zcoordinate']
@@ -91,26 +91,26 @@ def convert_to_h5(file_list, output_name, dx):
 
             # Prepare interpolator
             print("Preparing velocity interpolation")
-            interpolator_vx = sc.LinearNDInterpolator(tri, vel_cfd_res.vx)
-            interpolator_vy = sc.LinearNDInterpolator(tri, vel_cfd_res.vy)
+            # interpolator_vx = sc.LinearNDInterpolator(tri, vel_cfd_res.vx)
+            # interpolator_vy = sc.LinearNDInterpolator(tri, vel_cfd_res.vy)
             interpolator_vz = sc.LinearNDInterpolator(tri, vel_cfd_res.vz)
 
             print("Interpolating...")
-            vx1 = interpolator_vx(xx,yy,zz)
-            vy1 = interpolator_vy(xx,yy,zz)
+            # vx1 = interpolator_vx(xx,yy,zz)
+            # vy1 = interpolator_vy(xx,yy,zz)
             vz1 = interpolator_vz(xx,yy,zz)
 
             # ic(vx1.shape)
-            vx1 = np.nan_to_num(vx1)
-            vy1 = np.nan_to_num(vy1)
+            # vx1 = np.nan_to_num(vx1)
+            # vy1 = np.nan_to_num(vy1)
             vz1 = np.nan_to_num(vz1)
 
             outname = output_name + str(current_index)
             save_to_h5(outname, f"dx", (dx,dx,dx))
             save_to_h5(outname, f"origin", (min_x,min_y,min_z))
-            save_to_h5(outname, f"u", vx1)
-            save_to_h5(outname, f"v", vy1)
-            save_to_h5(outname, f"w", vz1)
+            # save_to_h5(outname, f"u", vx1)
+            # save_to_h5(outname, f"v", vy1)
+            save_to_h5(outname, f"w_updated", vz1)
 
         current_index += 10
 

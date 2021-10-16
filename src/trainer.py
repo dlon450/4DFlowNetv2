@@ -32,9 +32,12 @@ if __name__ == "__main__":
     network_name = '4DFlowNet_CSPNet_5Geom'
     patch_size = 12
     res_increase = 4
+    block = 'resnet_block'
+
     restore = False
     restore_folder = '../models/4DFlowNet_ResNet_5Geom_20210901-0847'
     restore_fn = '4DFlowNet_ResNet_5Geom_weights.h5'
+
     # Residual blocks, default (8 LR ResBlocks and 4 HR ResBlocks)
     low_resblock = 8
     hi_resblock = 4
@@ -63,6 +66,6 @@ if __name__ == "__main__":
 
     # ------- Main Network ------
     print(f"4DFlowNet Patch {patch_size}, lr {initial_learning_rate}, batch {batch_size}")
-    network = TrainerSetup(patch_size, res_increase, initial_learning_rate, QUICKSAVE, network_name, low_resblock, hi_resblock, restore, restore_folder, restore_fn)
+    network = TrainerSetup(patch_size, res_increase, initial_learning_rate, QUICKSAVE, network_name, block, low_resblock, hi_resblock, restore, restore_folder, restore_fn)
     network.init_model_dir()
     network.train_network(trainset, valset, n_epoch=epochs, testset=testset)

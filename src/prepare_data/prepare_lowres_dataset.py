@@ -13,7 +13,7 @@ def choose_venc_type():
     my_list = ['same'] * 68 + ['diff'] * 32
     return random.choice(my_list)
 
-def choose_venc(venc_values, max_vel, pr=0.):
+def choose_venc(venc_values, max_vel, pr=0.1):
     '''
         Probability pr (default 0.1) that venc will be lower than max velocity.
     '''
@@ -32,12 +32,12 @@ def downsample_HR(input_filepath, output_filename, downsample=2):
 
     # Possible magnitude and venc values
     mag_values  =  np.asarray([60, 80, 120, 180, 240]) # in px values [0-4095]
-    venc_values =  np.asarray([0.3, 0.6, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]) # in m/s
+    venc_values =  np.asarray([0.3, 0.6, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5., 5.5, 6.0]) # in m/s
 
     # Load the mask once
     with h5py.File(input_filepath, mode = 'r' ) as hf:
         mask = np.asarray(hf['mask'][0])
-        data_count = len(hf.get("u"))
+        data_count = np.min([len(hf.get(i)) for i in ["u", "v", "w"]])
     
     is_mask_saved = False # just to mark if the mask already saved or not
     for idx in range(data_count):
@@ -54,6 +54,7 @@ def downsample_HR(input_filepath, output_filename, downsample=2):
             # mask = np.asarray(hf['mask'][0])
 
             hr_u = np.asarray(hf['u'][idx])
+            shape = hr_u.shape
             hr_v = np.asarray(hf['v'][idx])
             hr_w = np.asarray(hf['w'][idx])
             # print(hr_u.shape)
@@ -134,13 +135,11 @@ if __name__ == '__main__':
 
     # Downsample rate
     downsample = 4
-
-    # input_filepaths = [f'{base_path}/trainG1HR.h5', f'{base_path}/trainG2HR.h5', f'{base_path}/trainG3HR.h5', f'{base_path}/trainG4HR.h5', f'{base_path}/trainG5HR.h5']
-    # output_filenames = [f'{base_path}/trainG1LR.h5', f'{base_path}/trainG2LR.h5', f'{base_path}/trainG3LR.h5', f'{base_path}/trainG4LR.h5', f'{base_path}/trainG5LR.h5']
-
-    input_filepaths = [f'{base_path}/trainG2HR.h5']
-    output_filenames = [f'{base_path}/trainG2LR.h5']
     
+    input_filepaths = ['{}/trainG{}HR.h5'.format(base_path, i) for i in range(7, 21) if i not in [8, 9, 10]]
+    # input_filepaths = ['{}/trainG{}HR.h5'.format(base_path, i) for i in range(1, 21) if i in [3]]
+    output_filenames = [i[:-5] + 'LR.h5' for i in input_filepaths]
+
     for i, o in zip(input_filepaths, output_filenames):
         downsample_HR(i, o, downsample)
 

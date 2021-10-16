@@ -4,8 +4,8 @@ import PatchData as pd
 
 def load_data(input_filepath):
     with h5py.File(input_filepath, mode = 'r' ) as hdf5:
-        data_nr = len(hdf5['u'])
-        print(hdf5['u'])
+        data_nr = np.min([len(hdf5.get(i)) for i in ["u", "v", "w"]])
+        print(hdf5['w'])
     indexes = np.arange(data_nr)
     print("Dataset: {} rows".format(len(indexes)))
     return indexes
@@ -56,8 +56,9 @@ if __name__ == "__main__":
         'validation.csv': [['trainG4LR.h5'], ['trainG4HR.h5']]
     }
 
+    i = 20
     files_dict = {
-        'train4.csv': [['trainG11LR.h5'], ['trainG11HR.h5']],
+        'train{}.csv'.format(i): [['trainG{}LR.h5'.format(i)], ['trainG{}HR.h5'.format(i)]],
     }
 
     for output_filename, files in files_dict.items():

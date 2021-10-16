@@ -13,17 +13,22 @@ if __name__ == "__main__":
         filepath = r'C:\Users\longd\OneDrive - The University of Auckland\Documents\2021\ENGSCI 700A\4DFlowNetv2\models\4DFlowNet'
         filename = r'quicksave_4DFlowNet'
     else:
+        filepath = r'result/all_geom/with_aliasing'
         filepath = r'data'
-        filename = r'trainG11HR'
-        mask = True
-        maskname = 'maski'
+        filename = r'dense'
+        filename = r'trainG4LR'
+        mask = False
+        maskname = 'mask'
+
+        with h5py.File('data/trainG4LR.h5', 'r') as hf:
+            mask_ = np.asarray(hf.get(maskname)[0,24:36,:12,:12])
 
     input_filepath = f'{filepath}\{filename}.h5'
 
     # colname = 'mag_v'
     for colname in ['u']:
         idx = 7
-        for i in range(10,61,25):
+        for i in range(25, 26):
             with h5py.File(input_filepath, 'r') as hf:
                 if quicksave:
                     img = np.asarray(hf.get(colname)[25][idx])
@@ -33,10 +38,15 @@ if __name__ == "__main__":
                     print(img3.shape)
                 else:
                     if mask:
-                        img = np.asarray(hf.get(maskname)[0])
+                        img = np.asarray(hf.get(maskname)[0,:,:12,:12])
                     else:
-                        img = np.asarray(hf.get(colname)[i])
-
+                        u = np.asarray(hf.get('u')[i,24:36,:12,:12])
+                        v = np.asarray(hf.get('v')[i,24:36,:12,:12])
+                        w = np.asarray(hf.get('w')[i,24:36,:12,:12])
+                        
+            img = np.sqrt(u**2 + v**2 + w**2)
+            img = u
+            img = img * mask_
             if quicksave:
                 minval, maxval = np.min(img),np.max(img)
                 # minval, maxval = -0.1, 0.2
@@ -46,9 +56,9 @@ if __name__ == "__main__":
                 plt.colorbar()
                 plt.show()    
             else:
-                minval = -0.10
-                maxval = .7
-                msv.multi_slice_viewer(img, slice_axis=2, clim=[minval, maxval])
-                # msv.multi_slice_viewer(img, slice_axis=0)
+                minval = -2.
+                maxval = 2.
+                msv.multi_slice_viewer(img, slice_axis=1, color='inferno', clim=[minval, maxval], save=False, savedir=filepath)
+                # msv.multi_slice_viewer(img, slice_axis=1, save=False, savedir=filepath)
             
     print(img.shape)

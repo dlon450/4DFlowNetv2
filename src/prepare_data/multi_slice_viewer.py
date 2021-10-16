@@ -47,6 +47,9 @@ def multi_slice_viewer(volume, slice_axis=0, color='jet', show_colorbar=True, cl
 
     fig.canvas.mpl_connect('key_press_event', process_key)
     plt.grid(show_grid)
+    plt.axis('off')
+    if save_mode:
+        plt.savefig('{}/{}{}.png'.format(save_dir, 'img', ax.index), dpi=150)
     plt.show()
 
 def process_key(event):
