@@ -84,12 +84,9 @@ class PatchData:
 
     def create_random_patch(self, u, index):
         self.idx = index
-        self.start_x = rnd.randrange(0, u.shape[0] - self.patch_size) 
+        self.start_x = rnd.randrange(0, u.shape[0] - self.patch_size + 1) 
         self.start_y = rnd.randrange(0, u.shape[1] - self.patch_size + 1) 
         self.start_z = rnd.randrange(0, u.shape[2] - self.patch_size + 1) 
-        # self.start_x = rnd.randrange(0, 1) 
-        # self.start_y = rnd.randrange(0, 1) 
-        # self.start_z = rnd.randrange(0, 1) 
 
     def set_patch(self, index, x, y, z):
         self.idx = index
@@ -103,8 +100,6 @@ class PatchData:
 
         self.coverage = np.count_nonzero(patch) / self.patch_size ** 3
         self.coverage = np.round(self.coverage * 1000) / 1000 # round the number to 3 decimal digit
-
-        # self.coverage = 0.201
 
     def create_random_rotation(self):
         is_rotate = rnd.randint(0,1) # 50-50 percent chance of augmentation

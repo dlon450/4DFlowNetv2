@@ -54,8 +54,6 @@ if __name__ == '__main__':
     # Check the number of rows in the file
     nr_rows = dataset.get_dataset_len(input_filepath)
 
-    nr_rows = 1
-
     print(f"Number of rows in dataset: {nr_rows}")
 
     print(f"Loading 4DFlowNet: {res_increase}x upsample")

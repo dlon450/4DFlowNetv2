@@ -16,14 +16,16 @@ if __name__ == "__main__":
         filepath = r'result/all_geom/with_aliasing'
         filepath = r'data'
         filename = r'dense'
-        filename = r'trainG4LR'
+        filename = r'trainG4HR'
+        input_filepath = r"C:\Users\longd\OneDrive - The University of Auckland\Documents\2021\ENGSCI 700A\4DFlowNetv2\data\csp_4x_NN.h5"
+        hr_filepath = r"C:\Users\longd\OneDrive - The University of Auckland\Documents\2021\ENGSCI 700A\4DFlowNetv2\data\trainG4HR.h5"
         mask = False
         maskname = 'mask'
 
-        with h5py.File('data/trainG4LR.h5', 'r') as hf:
-            mask_ = np.asarray(hf.get(maskname)[0,24:36,:12,:12])
+        with h5py.File(hr_filepath, 'r') as hf:
+            mask_ = np.asarray(hf.get(maskname)[0,:,:48,:48])
 
-    input_filepath = f'{filepath}\{filename}.h5'
+    # input_filepath = f'{filepath}\{filename}.h5'
 
     # colname = 'mag_v'
     for colname in ['u']:
@@ -31,22 +33,21 @@ if __name__ == "__main__":
         for i in range(25, 26):
             with h5py.File(input_filepath, 'r') as hf:
                 if quicksave:
-                    img = np.asarray(hf.get(colname)[25][idx])
+                    img = np.asarray(hf.get(colname)[20][idx])
                     img2 = np.asarray(hf.get('hr_v')[idx])
                     img3 = np.asarray(hf.get('lr_v')[idx])
                     img3 = np.squeeze(img3)
                     print(img3.shape)
                 else:
                     if mask:
-                        img = np.asarray(hf.get(maskname)[0,:,:12,:12])
-                    else:
-                        u = np.asarray(hf.get('u')[i,24:36,:12,:12])
-                        v = np.asarray(hf.get('v')[i,24:36,:12,:12])
-                        w = np.asarray(hf.get('w')[i,24:36,:12,:12])
+                        img = np.asarray(hf.get(maskname)[0,:,:,:])
+                    u = np.asarray(hf.get('u')[i,:,:,:])
+                    v = np.asarray(hf.get('v')[i,:,:,:])
+                    w = np.asarray(hf.get('w')[i,:,:,:])
                         
             img = np.sqrt(u**2 + v**2 + w**2)
-            img = u
-            img = img * mask_
+            # img = u
+            img = img[:,:,:] * mask_
             if quicksave:
                 minval, maxval = np.min(img),np.max(img)
                 # minval, maxval = -0.1, 0.2
@@ -56,9 +57,10 @@ if __name__ == "__main__":
                 plt.colorbar()
                 plt.show()    
             else:
-                minval = -2.
+                minval = 0.
                 maxval = 2.
-                msv.multi_slice_viewer(img, slice_axis=1, color='inferno', clim=[minval, maxval], save=False, savedir=filepath)
+                for s in range(2):
+                    msv.multi_slice_viewer(img, slice_axis=s, color='inferno', clim=[minval, maxval], save=False, savedir=filepath)
                 # msv.multi_slice_viewer(img, slice_axis=1, save=False, savedir=filepath)
             
     print(img.shape)
