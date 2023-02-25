@@ -1,5 +1,5 @@
 # 4DFlowNetv2
-Refined adaptation of Super Resolution 4D Flow MRI using Residual Neural Network. This repository supplements the article https://arxiv.org/pdf/2111.11660.pdf.
+Refined adaptation of Super Resolution 4D Flow MRI using Residual Neural Network. This repository supplements the article [Super-resolution 4D flow MRI to quantify aortic regurgitation using computational fluid dynamics and deep learning]{https://doi.org/10.1007/s10554-023-02815-z}.
 
 This is a refinement of the [original 4DFlowNet repository](https://github.com/EdwardFerdian/4DFlowNet) using Tensorflow 2.0 with Keras. Changes include:
 * Experimentation with dense and cross-partial blocks instead of residual ones
